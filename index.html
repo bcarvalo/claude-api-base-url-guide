@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Claude API调用地址怎么填？国内接入Base URL配置与避坑指南</title>
+  <meta name="description" content="Claude API国内调用时，Base URL和接口地址应该怎么填？本文介绍Claude中转API地址配置、原生与兼容接口区别、API Key与模型匹配方法，并提供调用示例及401、404、连接超时排查步骤。">
+  <meta name="keywords" content="Claude API国内调用, Claude API调用, Claude API调用地址, Claude API Base URL, Claude API接口地址, Claude国内接入, Claude中转API, Claude中转站, Claude API配置, Claude API连接失败, Claude API 404, Claude API鉴权失败">
+  <meta name="author" content="作者名称">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://quanzil.com/articles/how-to-call-gpt-api-in-china.html">
+
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="ai api">
+  <meta property="og:title" content="Claude API调用地址怎么填？国内接入Base URL配置与避坑指南">
+  <meta property="og:description" content="Claude API国内调用时，Base URL和接口地址应该怎么填？本文介绍Claude中转API地址配置、原生与兼容接口区别、API Key与模型匹配方法，并提供调用示例及401、404、连接超时排查步骤。">
+  <meta property="og:url" content="https://quanzil.com/articles/how-to-call-gpt-api-in-china.html">
+  <meta property="og:image" content="https://quanzil.com/images/article-cover.jpg">
+  <meta property="og:locale" content="zh_CN">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Claude API调用地址怎么填？国内接入Base URL配置与避坑指南">
+  <meta name="twitter:description" content="Claude API国内调用时，Base URL和接口地址应该怎么填？本文介绍Claude中转API地址配置、原生与兼容接口区别、API Key与模型匹配方法，并提供调用示例及401、404、连接超时排查步骤。">
+  <meta name="twitter:image" content="https://quanzil.com/images/article-cover.jpg">
+
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --surface: #fff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --accent: #2563eb;
+      --accent-light: #eff6ff;
+      --code-bg: #111827;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      line-height: 1.8;
+    }
+    a { color: var(--accent); }
+    .site-header {
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.97);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+    }
+    .header-inner, .page, .site-footer {
+      width: min(100% - 32px, 1100px);
+      margin: 0 auto;
+    }
+    .header-inner {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: max-content;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: -.04em;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, .2);
+    }
+    .brand-copy {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+    }
+    .brand {
+      color: var(--text);
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .brand-tagline {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+      margin-right: 22px;
+    }
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 0 11px;
+      border-radius: 7px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      white-space: nowrap;
+      transition: color .2s ease, background .2s ease;
+    }
+    .nav-link:hover, .nav-link.active {
+      background: #f1f5f9;
+      color: var(--text);
+    }
+    .page { padding: 56px 0 72px; }
+    .article {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: clamp(24px, 5vw, 64px);
+      box-shadow: 0 8px 30px rgba(15, 23, 42, .04);
+    }
+    .article-header { margin-bottom: 40px; }
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 600;
+    }
+    h1 {
+      margin: 0 0 16px;
+      color: #111827;
+      font-size: clamp(30px, 5vw, 46px);
+      line-height: 1.25;
+      letter-spacing: -.02em;
+    }
+    .summary {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 17px;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .header-target {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 16px;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+      box-shadow: 0 3px 10px rgba(37, 99, 235, .18);
+      transition: background .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+    .header-target:hover {
+      background: #1d4ed8;
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 5px 14px rgba(37, 99, 235, .25);
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .markdown-body { font-size: 17px; }
+    .markdown-body h2, .markdown-body h3, .markdown-body h4 {
+      margin: 2em 0 .7em;
+      color: #111827;
+      line-height: 1.35;
+    }
+    .markdown-body h2 {
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+      font-size: 28px;
+    }
+    .markdown-body h3 { font-size: 22px; }
+    .markdown-body p, .markdown-body ul, .markdown-body ol, .markdown-body blockquote { margin: 1em 0; }
+    .markdown-body img { max-width: 100%; height: auto; border-radius: 8px; }
+    .markdown-body blockquote {
+      margin-left: 0;
+      padding: 12px 18px;
+      border-left: 3px solid var(--accent);
+      background: var(--accent-light);
+      color: #374151;
+    }
+    .markdown-body code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #f3f4f6;
+      font-size: .9em;
+    }
+    .markdown-body pre {
+      overflow-x: auto;
+      padding: 18px;
+      border-radius: 8px;
+      background: var(--code-bg);
+      color: #e5e7eb;
+      line-height: 1.6;
+    }
+    .markdown-body pre code { padding: 0; background: transparent; color: inherit; }
+    .markdown-body table { display: block; overflow-x: auto; border-collapse: collapse; width: 100%; }
+    .markdown-body th, .markdown-body td { padding: 9px 12px; border: 1px solid var(--line); text-align: left; }
+    .markdown-body th { background: #f9fafb; }
+    .site-footer { padding: 24px 0 48px; color: var(--muted); font-size: 13px; text-align: center; }
+    @media (max-width: 640px) {
+      .header-inner { min-height: 56px; }
+      .brand-tagline, .main-nav { display: none; }
+      .page { padding: 24px 0 40px; }
+      .article { padding: 22px 18px; }
+      .markdown-body { font-size: 16px; }
+      .header-actions { gap: 10px; }
+      .header-target { padding: 8px 11px; font-size: 13px; }
+      .brand-mark { width: 31px; height: 31px; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a id="site-brand" class="brand-wrap" href="https://quanzil.com/" aria-label="返回网站首页">
+        <span id="brand-mark" class="brand-mark">AI</span>
+        <span class="brand-copy">
+          <span id="brand-name" class="brand">API</span>
+          <span id="brand-tagline" class="brand-tagline">让技术更简单</span>
+        </span>
+      </a>
+      <nav class="main-nav" aria-label="主导航">
+        <a id="nav-home" class="nav-link active" href="https://quanzil.com/">首页</a>
+        <a id="nav-articles" class="nav-link" href="https://quanzil.com/pricing">模型价格</a>
+        <a id="nav-docs" class="nav-link" href="https://docs.quanzil.com/">API 文档</a>
+        <a id="nav-pricing" class="nav-link" href="https://quanzil.com/news/focus">文章资讯</a>
+      </nav>
+      <div class="header-actions">
+        <a id="header-target" class="header-target" href="https://quanzil.com/" target="_blank" rel="noopener noreferrer">进入 API 中转站 →</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <article class="article" itemscope itemtype="https://schema.org/Article">
+      <header class="article-header">
+        <p class="eyebrow">原创文章</p>
+        <h1 id="article-title" itemprop="headline">Claude API调用地址怎么填？国内接入Base URL配置与避坑指南</h1>
+        <p id="article-summary" class="summary" itemprop="description">Claude API国内调用时，Base URL和接口地址应该怎么填？本文介绍Claude中转API地址配置、原生与兼容接口区别、API Key与模型匹配方法，并提供调用示例及401、404、连接超时排查步骤。</p>
+        <div class="meta">
+          <span>作者：<span id="article-author" itemprop="author">ai agent</span></span>
+          <span>发布时间：<time id="publish-date" itemprop="datePublished" datetime="2026-09-18">2026年09月18日</time></span>
+          <span>更新时间：<time id="update-date" itemprop="dateModified"></time></span>
+        </div>
+      </header>
+
+      <!-- 👇 Python 会直接将转好的 HTML 注入到这个 div 中 -->
+      <div id="markdown-content" class="markdown-body" itemprop="articleBody">
+<p>调用 Claude API 时，已经准备好 API Key，也复制了示例代码，为什么还是出现 <code>404</code>、鉴权失败或连接错误？</p>
+<p>问题可能出在<strong>请求地址没有配置正确</strong>。</p>
+<p>尤其是在进行 <strong>Claude API 国内调用</strong>时，不同服务平台提供的域名、接口路径和鉴权方式可能不同。如果把其他平台的示例直接复制过来，只修改密钥，代码就可能无法运行。</p>
+<p>这篇文章重点解决几个实际问题：</p>
+<ul>
+<li>Claude API 调用地址从哪里获取？</li>
+<li>Base URL 和完整接口地址有什么区别？</li>
+<li><code>/v1</code> 应不应该填写？</li>
+<li>Claude 原生接口与兼容接口应该怎么选？</li>
+<li>如何判断错误来自地址、密钥还是模型配置？</li>
+</ul>
+<p><strong>Claude API 中转服务入口：</strong></p>
+<blockquote>
+<p><a href="https://quanzil.com">https://quanzil.com</a></p>
+<p><a href="https://quanzil.net">https://quanzil.net</a></p>
+</blockquote>
+<p>以上是平台访问入口。实际 API 请求地址、支持的接口格式和模型名称，请从平台控制台或开发文档获取。</p>
+<hr />
+<h2>Claude API调用地址是什么？</h2>
+<p>Claude API 调用地址，是程序发送模型请求的目标地址。</p>
+<p>它通常包含三个部分：</p>
+<pre><code class="language-text">https://接口域名/版本路径/接口路径
+</code></pre>
+<p>例如，一个支持 Claude 原生 Messages 格式的服务，完整请求地址可能是：</p>
+<pre><code class="language-text">https://api.example.com/v1/messages
+</code></pre>
+<p>一个提供 OpenAI 兼容格式的 Claude 中转服务，完整请求地址可能是：</p>
+<pre><code class="language-text">https://api.example.com/v1/chat/completions
+</code></pre>
+<p>这里的 <code>api.example.com</code> 仅用于说明结构，不能直接用于实际调用。</p>
+<p><strong>接口地址需要从所用服务的文档获取，不能根据网站域名自行猜测。</strong></p>
+<p>有些平台的网站和 API 使用不同域名，也有些平台会使用额外的路径前缀。</p>
+<hr />
+<h2>Base URL和完整接口地址有什么区别？</h2>
+<p>这是 Claude API 接入中最容易混淆的地方。</p>
+<p><strong>Base URL 是接口的基础地址，完整接口地址则指向某个具体功能。</strong></p>
+<p>以兼容聊天接口为例：</p>
+<table>
+<thead>
+<tr>
+<th>配置类型</th>
+<th>示例</th>
+<th>常见使用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Base URL</td>
+<td><code>https://api.example.com/v1</code></td>
+<td>SDK的<code>base_url</code>参数</td>
+</tr>
+<tr>
+<td>完整接口地址</td>
+<td><code>https://api.example.com/v1/chat/completions</code></td>
+<td>cURL、HTTP请求</td>
+</tr>
+<tr>
+<td>平台网站地址</td>
+<td><code>https://example.com</code></td>
+<td>注册、充值、查看控制台</td>
+</tr>
+</tbody>
+</table>
+<p>不同工具对“基础地址”的定义可能不同，因此填写前需要看清字段说明。</p>
+<h3>使用SDK时</h3>
+<p>SDK 通常会自动添加具体接口路径。</p>
+<p>例如，通过 OpenAI Python SDK 调用兼容格式的 Claude 接口时：</p>
+<pre><code class="language-python">client = OpenAI(
+    api_key=api_key,
+    base_url=&quot;https://api.example.com/v1&quot;,
+)
+</code></pre>
+<p>随后执行聊天方法，SDK 会请求相应的聊天接口。</p>
+<p>如果把完整的 <code>/chat/completions</code> 地址填进这里，可能出现路径重复的问题。</p>
+<h3>使用HTTP请求时</h3>
+<p>使用 <code>requests.post()</code> 或 cURL 时，通常需要提供完整地址：</p>
+<pre><code class="language-text">https://api.example.com/v1/chat/completions
+</code></pre>
+<p>HTTP 工具不会根据请求内容自动推断你想调用哪个接口。</p>
+<hr />
+<h2>Claude API国内调用，先确认接口格式</h2>
+<p>配置请求地址前，需要先知道平台支持哪种接口。</p>
+<p>Claude 中转 API 常见的格式有两种：</p>
+<table>
+<thead>
+<tr>
+<th>对比项</th>
+<th>Claude原生Messages格式</th>
+<th>OpenAI兼容聊天格式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>常见路径</td>
+<td><code>/v1/messages</code></td>
+<td><code>/v1/chat/completions</code></td>
+</tr>
+<tr>
+<td>常见鉴权头</td>
+<td><code>x-api-key</code></td>
+<td><code>Authorization: Bearer</code></td>
+</tr>
+<tr>
+<td>系统提示词</td>
+<td>顶层<code>system</code>字段</td>
+<td><code>messages</code>中的<code>system</code>消息</td>
+</tr>
+<tr>
+<td>文本回答位置</td>
+<td><code>content</code>中的文本块</td>
+<td><code>choices[0].message.content</code></td>
+</tr>
+</tbody>
+</table>
+<p>这些是常见接口约定，中转平台可能有自己的配置要求。</p>
+<h3>原生格式适合什么情况？</h3>
+<p>如果平台提供 Claude 原生接口，并且你的项目需要按照 Claude Messages API 的结构接入，可以使用原生格式。</p>
+<p>是否支持工具调用、图片输入或其他能力，还需要查看平台的具体说明。</p>
+<h3>兼容格式适合什么情况？</h3>
+<p>如果已有支持 OpenAI 兼容协议的代码或应用，使用兼容格式通常更容易完成基础文本接入。</p>
+<p>但兼容协议不代表所有 Claude 功能都能完整映射。需要某项能力时，应单独确认。</p>
+<p><strong>接口路径、鉴权方式和请求正文必须匹配。</strong>不能只把 <code>/messages</code> 改成 <code>/chat/completions</code>，就认为其他配置可以保持不变。</p>
+<hr />
+<h2>Claude API地址配置最容易出现的五个问题</h2>
+<h3>1. 把平台首页当成API地址</h3>
+<p>平台注册入口通常用于浏览器访问，不一定能够接收模型请求。</p>
+<p>例如，打开网站首页成功，只能说明网站可以访问，不能证明 API 地址已经配置正确。</p>
+<p>正确做法是进入开发文档，查找明确标注的：</p>
+<ul>
+<li>API Base URL</li>
+<li>接口请求地址</li>
+<li>接口路径</li>
+<li>调用示例</li>
+</ul>
+<h3>2. 重复填写/v1</h3>
+<p>如果基础地址已经包含 <code>/v1</code>，代码又手动添加一次，最终请求可能变成：</p>
+<pre><code class="language-text">https://api.example.com/v1/v1/messages
+</code></pre>
+<p>这种情况通常会导致路径错误。</p>
+<h3>3. 在SDK中填写完整接口路径</h3>
+<p>某些 SDK 会自动拼接接口路径。如果填写了完整聊天地址，可能再次追加路径。</p>
+<p>排查时，应查看最终请求 URL，而不只是检查代码里的字符串。</p>
+<h3>4. 混用不同平台的密钥和地址</h3>
+<p>Claude 中转站的 API Key，通常由对应平台负责验证。</p>
+<p>把平台 A 的密钥发送到平台 B，一般无法通过鉴权，还可能造成密钥泄露。</p>
+<p>因此，<strong>不要拿真实密钥逐个尝试网上找到的接口域名。</strong></p>
+<h3>5. 使用了平台不支持的模型名称</h3>
+<p>地址正确，也不代表请求一定成功。</p>
+<p>如果 <code>model</code> 填写错误，或当前账户没有对应权限，平台仍然可能返回错误。有些服务会返回 400，有些可能返回 403 或 404。</p>
+<p>模型名称应从当前平台的模型列表复制。</p>
+<hr />
+<h2>如何验证Claude API地址是否配置正确？</h2>
+<p>建议使用一个简短请求，同时验证：</p>
+<ol>
+<li>请求地址是否正确。</li>
+<li>API Key 是否有效。</li>
+<li>模型是否可用。</li>
+<li>请求格式是否匹配。</li>
+</ol>
+<p>下面以 <strong>OpenAI 兼容格式的 Claude 接口</strong>为例。</p>
+<h3>配置环境变量</h3>
+<p>macOS 或 Linux：</p>
+<pre><code class="language-bash">export CLAUDE_API_KEY=&quot;替换为你的API_Key&quot;
+export CLAUDE_BASE_URL=&quot;https://你的接口域名/v1&quot;
+export CLAUDE_MODEL=&quot;替换为平台支持的Claude模型名称&quot;
+</code></pre>
+<p>Windows PowerShell：</p>
+<pre><code class="language-powershell">$env:CLAUDE_API_KEY=&quot;替换为你的API_Key&quot;
+$env:CLAUDE_BASE_URL=&quot;https://你的接口域名/v1&quot;
+$env:CLAUDE_MODEL=&quot;替换为平台支持的Claude模型名称&quot;
+</code></pre>
+<p>示例约定 <code>CLAUDE_BASE_URL</code> 已经包含 <code>/v1</code>。</p>
+<p>如果平台文档使用其他路径，请根据文档调整。</p>
+<h3>使用Python发送测试请求</h3>
+<p>安装依赖：</p>
+<pre><code class="language-bash">python -m pip install requests
+</code></pre>
+<p>调用代码：</p>
+<pre><code class="language-python">import os
+import requests
+
+base_url = os.environ[&quot;CLAUDE_BASE_URL&quot;].rstrip(&quot;/&quot;)
+api_key = os.environ[&quot;CLAUDE_API_KEY&quot;]
+model = os.environ[&quot;CLAUDE_MODEL&quot;]
+
+url = f&quot;{base_url}/chat/completions&quot;
+
+response = requests.post(
+    url,
+    headers={
+        &quot;Content-Type&quot;: &quot;application/json&quot;,
+        &quot;Authorization&quot;: f&quot;Bearer {api_key}&quot;,
+    },
+    json={
+        &quot;model&quot;: model,
+        &quot;messages&quot;: [
+            {
+                &quot;role&quot;: &quot;user&quot;,
+                &quot;content&quot;: &quot;请用一句话介绍Claude API。&quot;,
+            }
+        ],
+        &quot;max_tokens&quot;: 200,
+    },
+    timeout=(10, 60),
+)
+
+print(&quot;请求地址：&quot;, url)
+print(&quot;HTTP状态码：&quot;, response.status_code)
+
+if not response.ok:
+    print(&quot;错误内容：&quot;, response.text)
+    response.raise_for_status()
+
+data = response.json()
+print(&quot;Claude回答：&quot;, data[&quot;choices&quot;][0][&quot;message&quot;][&quot;content&quot;])
+</code></pre>
+<p>这段代码会显示最终请求地址，方便发现路径重复或缺失。</p>
+<p>请在本地排查时查看错误内容；生产环境记录日志时，应过滤密钥和敏感业务信息。</p>
+<p><strong>如果返回了正常的 Claude 回答，说明这组基础配置可以用于调用。</strong></p>
+<hr />
+<h2>已经使用SDK，Claude Base URL怎么填？</h2>
+<p>如果平台支持本文使用的兼容格式，可以通过 SDK 配置基础地址。</p>
+<p>安装依赖：</p>
+<pre><code class="language-bash">python -m pip install --upgrade openai
+</code></pre>
+<p>调用示例：</p>
+<pre><code class="language-python">import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ[&quot;CLAUDE_API_KEY&quot;],
+    base_url=os.environ[&quot;CLAUDE_BASE_URL&quot;].rstrip(&quot;/&quot;) + &quot;/&quot;,
+    timeout=60.0,
+    max_retries=2,
+)
+
+response = client.chat.completions.create(
+    model=os.environ[&quot;CLAUDE_MODEL&quot;],
+    messages=[
+        {
+            &quot;role&quot;: &quot;user&quot;,
+            &quot;content&quot;: &quot;请说明Claude适合哪些文本处理任务。&quot;,
+        }
+    ],
+    max_tokens=300,
+)
+
+print(response.choices[0].message.content)
+</code></pre>
+<p>这里使用的仍然是环境变量中的 Claude 模型。</p>
+<p>如果 HTTP 示例成功，而 SDK 示例失败，重点比较：</p>
+<ul>
+<li>两种方式最终使用的地址是否一致。</li>
+<li>SDK 是否自动添加了路径。</li>
+<li>请求参数是否相同。</li>
+<li>平台是否支持该 SDK 使用的接口格式。</li>
+</ul>
+<hr />
+<h2>Claude API调用返回错误，怎么判断原因？</h2>
+<h3>返回401：先检查鉴权配置</h3>
+<p>重点核对：</p>
+<ul>
+<li>API Key 是否完整。</li>
+<li>Key 是否已失效或被禁用。</li>
+<li>密钥是否属于当前请求平台。</li>
+<li>请求头是否符合平台要求。</li>
+</ul>
+<p>如果平台要求 <code>x-api-key</code>，却发送了 <code>Authorization: Bearer</code>，就可能无法通过验证。</p>
+<h3>返回404：先检查路径和模型</h3>
+<p>确认最终地址中是否存在：</p>
+<pre><code class="language-text">/v1/v1/
+</code></pre>
+<p>或者重复的：</p>
+<pre><code class="language-text">/chat/completions/chat/completions
+</code></pre>
+<p>再确认平台是否真的提供当前路径，以及模型名称是否有效。</p>
+<h3>返回400：检查请求格式</h3>
+<p>地址能够接收请求，但正文不符合要求时，可能返回 400。</p>
+<p>例如：</p>
+<ul>
+<li>原生接口中使用了兼容格式的系统消息。</li>
+<li>缺少必填参数。</li>
+<li>输出上限超出允许范围。</li>
+<li>输入长度超过模型限制。</li>
+</ul>
+<p>应根据错误正文修改请求，避免一次同时调整多个配置。</p>
+<h3>返回429：区分限流和额度不足</h3>
+<p>如果是请求频率或并发超限，可以降低并发，并进行有限重试。</p>
+<p>如果是账户额度不足，需要检查余额或配额。更换接口路径通常无法解决这类问题。</p>
+<h3>返回HTML页面：检查是否请求到了网页</h3>
+<p>正常模型接口通常返回 JSON 或流式事件。</p>
+<p>如果收到的是登录页、网站首页或其他 HTML 内容，可能请求到了网页地址，也可能受到网关访问策略影响。</p>
+<p>查看 HTTP 状态码和 <code>Content-Type</code>，再核对接口文档。</p>
+<h3>连接超时：检查地址和连接情况</h3>
+<p>连接超时不一定是模型故障，也可能与域名、网络、代理配置或服务状态有关。</p>
+<p>建议先使用短问题测试，并区分连接失败与读取响应超时。</p>
+<p>如果需要提供排查信息，可以记录错误类型、发生时间和请求 ID，避免把完整密钥发给他人。</p>
+<hr />
+<h2>Claude API国内调用时，怎样减少后续配置问题？</h2>
+<h3>将接口配置集中管理</h3>
+<p>把 API Key、Base URL 和模型名称放在环境变量或后端配置中，避免散落在多个代码文件里。</p>
+<h3>区分测试环境和生产环境</h3>
+<p>为不同环境使用独立配置，方便控制测试用量和排查问题。</p>
+<h3>保存明确的接入记录</h3>
+<p>记录所用接口格式、基础地址、模型名称和必要参数。后续更换模型或迁移项目时，可以逐项核对。</p>
+<h3>修改配置后先做最小测试</h3>
+<p>无论是更换地址、密钥还是模型，都先发送一个短请求。确认成功后，再恢复长文档、多轮对话和其他业务功能。</p>
+<h3>通过后端调用Claude</h3>
+<p>网站或 App 应通过自己的后端访问 Claude API。后端保存密钥，并负责用户校验、请求限流和用量记录。</p>
+<hr />
+<h2>Claude API地址配置常见问题</h2>
+<h3>Claude中转站的网址就是Base URL吗？</h3>
+<p>不一定。网站地址与 API 地址可能不同，需要查看开发文档。</p>
+<h3>Base URL末尾要不要加斜杠？</h3>
+<p>不同客户端会有不同的路径拼接方式。应按照所用工具和平台文档配置，并确认最终请求 URL。</p>
+<h3>同一个Base URL能调用所有Claude模型吗？</h3>
+<p>取决于平台提供的模型和账户权限。即使地址相同，也需要填写有效的模型名称。</p>
+<h3>请求成功就说明所有Claude功能都能用吗？</h3>
+<p>不能。基础文本调用成功，只能验证当前请求。流式输出、图片输入、工具调用等能力还需要分别测试。</p>
+<h3>更换Claude中转站，只修改地址就可以吗？</h3>
+<p>通常还需要更换 API Key，并重新确认模型名称、鉴权方式、请求参数和计费规则。</p>
+<hr />
+<h2>从正确的调用地址开始接入Claude</h2>
+<p>Claude API 国内调用时，可以按下面的顺序配置：</p>
+<ol>
+<li>从平台文档获取 API 地址。</li>
+<li>确认使用原生接口还是兼容接口。</li>
+<li>区分 Base URL 与完整请求地址。</li>
+<li>配置对应平台的 API Key 和模型名称。</li>
+<li>发送最小请求，检查最终 URL 和响应。</li>
+<li>再加入实际业务功能。</li>
+</ol>
+<p><strong>Claude API 中转服务入口：</strong></p>
+<blockquote>
+<p><a href="https://quanzil.com">https://quanzil.com</a></p>
+<p><a href="https://quanzil.net">https://quanzil.net</a></p>
+</blockquote>
+</div>
+
+      <!-- 👇 Python 会识别并删除这个占位符，保持输出页面干净 -->
+      
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div>© <span id="current-year"></span> 保留所有权利</div>
+  </footer>
+
+  <script>
+    // Python 会替换这里的内容
+    const articleConfig = {
+  "title": "Claude API调用地址怎么填？国内接入Base URL配置与避坑指南",
+  "summary": "Claude API国内调用时，Base URL和接口地址应该怎么填？本文介绍Claude中转API地址配置、原生与兼容接口区别、API Key与模型匹配方法，并提供调用示例及401、404、连接超时排查步骤。",
+  "author": "ai agent",
+  "published": "2026-10-14 00:00:00",
+  "canonical": "https://quanzil.com/articles/how-to-call-gpt-api-in-china.html",
+  "targetUrl": "https://quanzil.com/",
+  "targetLabel": "进入 API 中转站 →",
+  "siteName": "API ",
+  "siteTagline": "让技术更简单",
+  "brandMark": "AI",
+  "homeUrl": "https://quanzil.com/",
+  "articlesUrl": "https://quanzil.com/pricing",
+  "docsUrl": "https://docs.quanzil.com/",
+  "pricingUrl": "https://quanzil.com/news/focus"
+};
+
+    const formatDate = value => new Intl.DateTimeFormat('zh-CN', {
+      year: 'numeric', month: '2-digit', day: '2-digit'
+    }).format(new Date(value));
+
+    // 填充顶部和导航信息
+    document.title = `${articleConfig.title}｜网站名称`;
+    document.getElementById('site-brand').href = articleConfig.homeUrl;
+    document.getElementById('brand-name').textContent = articleConfig.siteName;
+    document.getElementById('brand-tagline').textContent = articleConfig.siteTagline;
+    document.getElementById('brand-mark').textContent = articleConfig.brandMark;
+    document.getElementById('nav-home').href = articleConfig.homeUrl;
+    document.getElementById('nav-articles').href = articleConfig.articlesUrl;
+    document.getElementById('nav-docs').href = articleConfig.docsUrl;
+    document.getElementById('nav-pricing').href = articleConfig.pricingUrl;
+
+    // 填充文章 Meta 数据
+    document.getElementById('article-title').textContent = articleConfig.title;
+    document.getElementById('article-summary').textContent = articleConfig.summary;
+    document.getElementById('article-author').textContent = articleConfig.author;
+    const headerTarget = document.getElementById('header-target');
+    headerTarget.href = articleConfig.targetUrl;
+    headerTarget.textContent = articleConfig.targetLabel;
+
+    document.getElementById('publish-date').textContent = formatDate(articleConfig.published);
+    document.getElementById('publish-date').dateTime = articleConfig.published;
+
+    const updated = new Date();
+    const updateDate = updated.toISOString().slice(0, 10);
+    document.getElementById('update-date').textContent = formatDate(updateDate);
+    document.getElementById('update-date').dateTime = updateDate;
+    document.getElementById('current-year').textContent = updated.getFullYear();
+
+    // 构建结构化数据 (对百度/Google SEO 极其重要)
+    const schema = {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: articleConfig.title,
+      description: articleConfig.summary,
+      author: { '@type': 'Person', name: articleConfig.author },
+      datePublished: articleConfig.published,
+      dateModified: updateDate,
+      mainEntityOfPage: { '@type': 'WebPage', '@id': articleConfig.canonical }
+    };
+    const schemaScript = document.createElement('script');
+    schemaScript.type = 'application/ld+json';
+    schemaScript.textContent = JSON.stringify(schema);
+    document.head.appendChild(schemaScript);
+  </script>
+</body>
+</html>
